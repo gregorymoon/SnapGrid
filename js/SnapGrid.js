@@ -115,6 +115,8 @@ sg.placeElement = function($element){
 		sg.error("placeElement cannot place element that is does not have 'snap-element' class");
 		return;
 	}
+	
+	
 
 	var coords = sg.getCoordsFromSnapElement($element);
 	
@@ -125,13 +127,46 @@ sg.placeElement = function($element){
 
 sg.getCoordsFromSnapElement = function($element){
 	var startCol = parseInt($element.attr('snapStartCol')),
-		x1 = sg.getCoordsFromCol(startCol).x1,
-		x2 = sg.getCoordsFromCol(startCol + parseInt($element.attr('snapWidth'))).x1,
+		endCol = startCol + parseInt($element.attr('snapWidth')),
 		startRow = parseInt($element.attr('snapStartRow')),
+		endRow = startRow + parseInt($element.attr('snapHeight'));
+	
+	if(startCol > sg.cols){
+		sg.warning("getCoordsFromSnapElement - startCol too large");
+		startCol = Math.floor(sg.cols/2);
+		$element.attr('startCol', startCol);
+		$element.attr('snapWidth', endCol - startCol);
+	}
+
+	if(endCol > sg.cols){
+		sg.warning("getCoordsFromSnapElement - endCol too large");
+		endCol = Math.floor(sg.cols/2);
+		$element.attr('snapWidth', endCol - startCol);
+	}
+
+	if(startRow > sg.rows){
+		sg.warning("getCoordsFromSnapElement - startRow too large");
+		startRow = Math.floor(sg.rows/2);
+		$element.attr('startRow', startRow);
+		$element.attr('snapHeight', endRow - startRow);
+	}
+
+	if(endRow > sg.rows){
+		sg.warning("getCoordsFromSnapElement - endRow too large");
+		endRow = Math.floor(sg.rows/2);
+		$element.attr('snapHeight', endRow - startRow);
+	}
+
+	var x1 = sg.getCoordsFromCol(startCol).x1,
+		x2 = sg.getCoordsFromCol(endCol).x1,
 		y1 = sg.getCoordsFromRow(startRow).y1,
-		y2 = sg.getCoordsFromRow(startRow + parseInt($element.attr('snapHeight'))).y1;
+		y2 = sg.getCoordsFromRow(endRow).y1;
 	
 	return {
+		startCol: startCol,
+		endCol: endCol,
+		startRow: startRow,
+		endRow: endRow,
 		x1: x1,
 		x2: x2,
 		y1: y1,
