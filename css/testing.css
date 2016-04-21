@@ -1,0 +1,12 @@
+@CHARSET "ISO-8859-1";
+
+#test{
+	background-color: darkgreen;
+	top: 10px;
+	left: 10px;	
+}
+
+.snap-element{
+	background-color: red;
+	border-radius: 10px;
+}
