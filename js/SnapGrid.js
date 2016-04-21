@@ -131,27 +131,27 @@ sg.getCoordsFromSnapElement = function($element){
 		startRow = parseInt($element.attr('snapStartRow')),
 		endRow = startRow + parseInt($element.attr('snapHeight'));
 	
-	if(startCol > sg.cols){
+	if(startCol > sg.cols || startCol < 0){
 		sg.warning("getCoordsFromSnapElement - startCol too large");
 		startCol = Math.floor(sg.cols/2);
 		$element.attr('startCol', startCol);
 		$element.attr('snapWidth', endCol - startCol);
 	}
 
-	if(endCol > sg.cols){
+	if(endCol > sg.cols || endCol < 0){
 		sg.warning("getCoordsFromSnapElement - endCol too large");
 		endCol = Math.floor(sg.cols/2);
 		$element.attr('snapWidth', endCol - startCol);
 	}
 
-	if(startRow > sg.rows){
+	if(startRow > sg.rows || startRow < 0){
 		sg.warning("getCoordsFromSnapElement - startRow too large");
 		startRow = Math.floor(sg.rows/2);
 		$element.attr('startRow', startRow);
 		$element.attr('snapHeight', endRow - startRow);
 	}
 
-	if(endRow > sg.rows){
+	if(endRow > sg.rows || endRow < 0){
 		sg.warning("getCoordsFromSnapElement - endRow too large");
 		endRow = Math.floor(sg.rows/2);
 		$element.attr('snapHeight', endRow - startRow);
