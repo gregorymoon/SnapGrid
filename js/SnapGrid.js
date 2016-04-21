@@ -55,15 +55,18 @@ sg.clearLastGrid = function(){
 		xCoords, yCoords;
 
 	if(sg.lastGrid !== undefined){
+		var temp = ctx.globalCompositeOperation;
+		ctx.globalCompositeOperation = 'xor';
 		ctx.clearRect(sg.lastGrid.x1, sg.lastGrid.y1, sg.lastGrid.width, sg.lastGrid.height);
+		ctx.globalCompositeOperation = temp;
 
-		for(var i = sg.lastGrid.startRow; i < sg.lastGrid.endRow; i++){
+		for(var i = sg.lastGrid.startRow; i < sg.lastGrid.endRow - 1; i++){
 			yCoords = sg.getCoordsFromRow(i);
 
 			sg.drawHorizontalLine(ctx, yCoords.y2, sg.lastGrid.x1, sg.lastGrid.x2);
 		}
 
-		for(var i = sg.lastGrid.startCol; i < sg.lastGrid.endCol; i++){
+		for(var i = sg.lastGrid.startCol; i < sg.lastGrid.endCol - 1; i++){
 			xCoords = sg.getCoordsFromCol(i);
 
 			sg.drawVerticalLine(ctx, xCoords.x2, sg.lastGrid.y1, sg.lastGrid.y2);
@@ -238,8 +241,8 @@ sg.updateGrid = function(){
 	var canvas = sg.canvas.get(0),
 		ctx = canvas.getContext('2d');
 
-	canvas.width = canvas.clientWidth;
-	canvas.height = canvas.clientHeight;
+	canvas.width = $('body').width();//canvas.clientWidth;
+	canvas.height = $('body').height();//canvas.clientHeight;
 
 	sg.canvas.snapHeight = canvas.height;
 	sg.canvas.snapWidth = canvas.width;
@@ -255,6 +258,12 @@ sg.updateGrid = function(){
 	for(var i = 1; i < sg.cols; i++){
 		sg.drawVerticalLine(ctx, i * sg.sWidth);
 	}
+	
+	sg.lastGrid = undefined;
+	
+	$('.snap-element').each(function(idx, obj){
+		sg.placeElement($(obj));
+	});
 }
 
 sg.drawHorizontalLine = function(ctx, y, x1, x2){
