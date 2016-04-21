@@ -127,33 +127,34 @@ sg.placeElement = function($element){
 
 sg.getCoordsFromSnapElement = function($element){
 	var startCol = parseInt($element.attr('snapStartCol')),
-		endCol = startCol + parseInt($element.attr('snapWidth')),
-		startRow = parseInt($element.attr('snapStartRow')),
-		endRow = startRow + parseInt($element.attr('snapHeight'));
+		startRow = parseInt($element.attr('snapStartRow'));
 	
 	if(startCol > sg.cols || startCol < 0){
-		sg.warning("getCoordsFromSnapElement - startCol too large");
+		sg.warning("getCoordsFromSnapElement - startCol out of bounds for: ", $element);
 		startCol = Math.floor(sg.cols/2);
 		$element.attr('startCol', startCol);
 		$element.attr('snapWidth', endCol - startCol);
 	}
 
-	if(endCol > sg.cols || endCol < 0){
-		sg.warning("getCoordsFromSnapElement - endCol too large");
-		endCol = Math.floor(sg.cols/2);
-		$element.attr('snapWidth', endCol - startCol);
-	}
-
 	if(startRow > sg.rows || startRow < 0){
-		sg.warning("getCoordsFromSnapElement - startRow too large");
+		sg.warning("getCoordsFromSnapElement - startRow out of bounds for: ", $element);
 		startRow = Math.floor(sg.rows/2);
 		$element.attr('startRow', startRow);
 		$element.attr('snapHeight', endRow - startRow);
 	}
+	
+	var endCol = startCol + parseInt($element.attr('snapWidth')),
+		endRow = startRow + parseInt($element.attr('snapHeight'));
 
-	if(endRow > sg.rows || endRow < 0){
-		sg.warning("getCoordsFromSnapElement - endRow too large");
-		endRow = Math.floor(sg.rows/2);
+	if(endCol > sg.cols || endCol < 0 || endCol < startCol){
+		sg.warning("getCoordsFromSnapElement - endCol out of bounds for:", $element);
+		endCol = startCol + 1;
+		$element.attr('snapWidth', endCol - startCol);
+	}
+
+	if(endRow > sg.rows || endRow < 0 || endRow < startRow){
+		sg.warning("getCoordsFromSnapElement - endRow out of bounds for: ", $element);
+		endRow = startRow + 1;
 		$element.attr('snapHeight', endRow - startRow);
 	}
 
@@ -351,9 +352,13 @@ sg.setLogging = function(status){
 	}
 }
 
-sg.warning = function(message){
+sg.warning = function(message, param){
 	if(sg.logging){
 		console.log('SnapGrid Warning: ' + message);
+		
+		if(param !== undefined){
+			console.log(param);
+		}
 	}
 }
 
