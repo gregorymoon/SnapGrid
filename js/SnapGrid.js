@@ -6,7 +6,7 @@ var sg = sg || {logging: false};
 
 $(document).ready(function(){
 	sg.setLogging(true);
-	sg.addCanvas(20, 20);
+	sg.addCanvas(30, 50);
 	
 	$('.snap-element')
 		.each(function(idx, obj){
@@ -14,6 +14,12 @@ $(document).ready(function(){
 			
 			sg.dragSnapElement( {target: obj} );
 			sg.placeElement($obj);
+		})
+		.resizable({
+			containment: 'parent',
+			resize: sg.resizeSnapElement,
+			start: sg.startResizeSnapElement,
+			stop: sg.endResizeSnapElement
 		})
 		.draggable({
 			containment: 'parent',
@@ -27,15 +33,156 @@ $(document).ready(function(){
 	$('.snap.loading-indicator').remove();
 });
 
-sg.showLoadingIndicator = function(){
-	var $loading = $(document.createElement('div'));
-	
-	$loading
-		.addClass('snap')
-		.addClass('loading-indicator');
 
-	$('body').append($loading);
+/*
+ * Coordinate to Grid Position Translations
+ */
+
+sg.getColFromXCoord = function(x){
+	return Math.floor(x / sg.canvas.snapWidth * sg.cols);
 }
+
+sg.getRowFromYCoord = function(y){
+	return Math.floor(y / sg.canvas.snapHeight * sg.rows);
+}
+
+sg.getGridPosFromCoords = function(x, y){
+	return {
+		row: sg.getRowFromYCoord(y),
+		col: sg.getColFromXCoord(x)
+	};
+}
+
+sg.getGridPosFromElement = function($element){
+	var startPos = sg.getGridPosFromCoords($element.position().left, $element.position().top);
+	
+	return {
+		startCol: startPos.col,
+		startRow: startPos.row,
+		endCol: sg.getColFromXCoord($element.position().left + $element.width()),
+		endRow: sg.getRowFromYCoord($element.position().top + $element.height())
+	};
+}
+
+/*
+ * Grid Position to Coordinates Translations
+ */
+
+sg.getCoordsFromGridPos = function(row, col){
+	var yCoords = sg.getCoordsFromRow(row),
+		xCoords = sg.getCoordsFromCol(col);
+	
+	return {
+		x1: xCoords.x1,
+		x2: xCoords.x2,
+		y1: yCoords.y1,
+		y2: yCoords.y2,
+		width: xCoords.x2 - xCoords.x1,
+		height: yCoords.x2 - yCoords.x1
+	};
+}
+
+sg.getCoordsFromRow = function(row){
+	var y1 = row * sg.sHeight;
+
+	return {
+		y1: y1,
+		y2: y1 + sg.sHeight
+	};
+}
+
+sg.getCoordsFromCol = function(col){
+	var x1 = col * sg.sWidth;
+
+	return {
+		x1: x1,
+		x2: x1 + sg.sWidth
+	};
+}
+
+sg.getCoordsFromElement = function($element){
+	var startCol = parseInt($element.attr('snapStartCol')),
+		startRow = parseInt($element.attr('snapStartRow'));
+	
+	if(startCol > sg.cols || startCol < 0){
+		sg.warning("getCoordsFromElement - startCol out of bounds for: ", $element);
+		startCol = Math.floor(sg.cols/2);
+		$element.attr('startCol', startCol);
+		$element.attr('snapWidth', endCol - startCol);
+	}
+
+	if(startRow > sg.rows || startRow < 0){
+		sg.warning("getCoordsFromElement - startRow out of bounds for: ", $element);
+		startRow = Math.floor(sg.rows/2);
+		$element.attr('startRow', startRow);
+		$element.attr('snapHeight', endRow - startRow);
+	}
+	
+	var endCol = startCol + parseInt($element.attr('snapWidth')),
+		endRow = startRow + parseInt($element.attr('snapHeight'));
+
+	if(endCol > sg.cols || endCol < 0 || endCol < startCol){
+		sg.warning("getCoordsFromElement - endCol out of bounds for:", $element);
+		endCol = startCol + 1;
+		$element.attr('snapWidth', endCol - startCol);
+	}
+
+	if(endRow > sg.rows || endRow < 0 || endRow < startRow){
+		sg.warning("getCoordsFromElement - endRow out of bounds for: ", $element);
+		endRow = startRow + 1;
+		$element.attr('snapHeight', endRow - startRow);
+	}
+
+	var x1 = sg.getCoordsFromCol(startCol).x1,
+		x2 = sg.getCoordsFromCol(endCol).x1,
+		y1 = sg.getCoordsFromRow(startRow).y1,
+		y2 = sg.getCoordsFromRow(endRow).y1;
+	
+	return {
+		x1: x1,
+		x2: x2,
+		y1: y1,
+		y2: y2,
+		height: y2 - y1,
+		width: x2 - x1
+	};
+}
+
+/*
+ * Resizing Snap Elements
+ */
+
+sg.resizeSnapElement = function(event, ui){
+	var $element = $(event.target);
+	sg.canvas.show();
+	$element.width(ui.size.width);
+	$element.height(ui.size.height);
+	
+	var grid = sg.getGridPosFromElement($element),
+		snapWidth = grid.endCol - grid.startCol,
+		snapHeight = grid.endRow - grid.startRow;
+	
+	$element
+		.attr({
+			snapWidth: snapWidth > 0 ? snapWidth : 1,
+			snapHeight: snapHeight > 0 ? snapHeight : 1
+		});
+}
+
+sg.startResizeSnapElement = function(event, ui){
+	var $element = $(event.target);
+
+	sg.log('end resizing');
+}
+
+sg.endResizeSnapElement = function(event, ui){
+	sg.canvas.hide(200);
+	sg.placeElement($(event.target));
+}
+
+/*
+ * Dragging Snap Elements
+ */
 
 sg.dragSnapElement = function(event, ui){
 	var $element = $(event.target),
@@ -47,6 +194,21 @@ sg.dragSnapElement = function(event, ui){
 			snapStartRow: grid.startRow,
 		});
 }
+
+sg.startDragSnapElement = function(event, ui){
+	sg.clearLastGrid();
+	sg.canvas.show(200);
+}
+
+sg.stopDragSnapElement = function(event, ui){
+	sg.clearLastGrid();
+	sg.placeElement($(event.target));
+	sg.canvas.hide(200);
+}
+
+/*
+ * Canvas Drawing
+ */
 
 sg.clearLastGrid = function(){
 	var ctx = sg.canvas.get(0).getContext('2d'),
@@ -90,103 +252,17 @@ sg.clearLastGrid = function(){
 	return ctx;
 }
 
-sg.getCoordsFromRow = function(row){
-	var y1 = row * sg.sHeight;
-
-	return {
-		y1: y1,
-		y2: y1 + sg.sHeight
-	};
-}
-
-sg.getCoordsFromCol = function(col){
-	var x1 = col * sg.sWidth;
-
-	return {
-		x1: x1,
-		x2: x1 + sg.sWidth
-	};
-}
-
 sg.placeElement = function($element){
 	if(!$element.hasClass('snap-element')){
 		sg.error("placeElement cannot place element that is does not have 'snap-element' class");
 		return;
 	}
 	
-	
-
-	var coords = sg.getCoordsFromSnapElement($element);
+	var coords = sg.getCoordsFromElement($element);
 	
 	$element.offset({ left: coords.x1, top: coords.y1 });
 	$element.width(coords.width - 1);
 	$element.height(coords.height - 1);
-}
-
-sg.getCoordsFromSnapElement = function($element){
-	var startCol = parseInt($element.attr('snapStartCol')),
-		startRow = parseInt($element.attr('snapStartRow'));
-	
-	if(startCol > sg.cols || startCol < 0){
-		sg.warning("getCoordsFromSnapElement - startCol out of bounds for: ", $element);
-		startCol = Math.floor(sg.cols/2);
-		$element.attr('startCol', startCol);
-		$element.attr('snapWidth', endCol - startCol);
-	}
-
-	if(startRow > sg.rows || startRow < 0){
-		sg.warning("getCoordsFromSnapElement - startRow out of bounds for: ", $element);
-		startRow = Math.floor(sg.rows/2);
-		$element.attr('startRow', startRow);
-		$element.attr('snapHeight', endRow - startRow);
-	}
-	
-	var endCol = startCol + parseInt($element.attr('snapWidth')),
-		endRow = startRow + parseInt($element.attr('snapHeight'));
-
-	if(endCol > sg.cols || endCol < 0 || endCol < startCol){
-		sg.warning("getCoordsFromSnapElement - endCol out of bounds for:", $element);
-		endCol = startCol + 1;
-		$element.attr('snapWidth', endCol - startCol);
-	}
-
-	if(endRow > sg.rows || endRow < 0 || endRow < startRow){
-		sg.warning("getCoordsFromSnapElement - endRow out of bounds for: ", $element);
-		endRow = startRow + 1;
-		$element.attr('snapHeight', endRow - startRow);
-	}
-
-	var x1 = sg.getCoordsFromCol(startCol).x1,
-		x2 = sg.getCoordsFromCol(endCol).x1,
-		y1 = sg.getCoordsFromRow(startRow).y1,
-		y2 = sg.getCoordsFromRow(endRow).y1;
-	
-	return {
-		startCol: startCol,
-		endCol: endCol,
-		startRow: startRow,
-		endRow: endRow,
-		x1: x1,
-		x2: x2,
-		y1: y1,
-		y2: y2,
-		height: y2 - y1,
-		width: x2 - x1
-	};
-}
-
-sg.getCoordsFromRowAndCol = function(row, col){
-	var yCoords = sg.getCoordsFromRow(row),
-		xCoords = sg.getCoordsFromCol(col);
-	
-	return {
-		x1: xCoords.x1,
-		x2: xCoords.x2,
-		y1: yCoords.y1,
-		y2: yCoords.y2,
-		width: xCoords.x2 - xCoords.x1,
-		height: yCoords.x2 - yCoords.x1
-	};
 }
 
 sg.drawEnclosingGrid = function($element){
@@ -201,40 +277,26 @@ sg.drawEnclosingGrid = function($element){
 }
 
 sg.getEnclosingGrid = function($element){
-	var startRow = Math.floor($element.position().top / sg.canvas.snapHeight * sg.rows),
-		endRow = startRow + parseInt($element.attr('snapHeight')),
-		startCol = Math.floor($element.position().left / sg.canvas.snapWidth * sg.cols),
-		endCol = startCol + parseInt($element.attr('snapWidth')),
-		x1 = startCol * sg.sWidth,
-		x2 = endCol * sg.sWidth,
-		y1 = startRow * sg.sHeight,
-		y2 = endRow * sg.sHeight;
+	var grid = sg.getGridPosFromElement($element),
+		x1 = grid.startCol * sg.sWidth,
+		x2 = grid.endCol * sg.sWidth,
+		y1 = grid.startRow * sg.sHeight,
+		y2 = grid.endRow * sg.sHeight;
 	
 	var grid = {
-		startCol: startCol,	
+		startCol: grid.startCol,	
 		x1: x1,
-		endCol: endCol,	
+		endCol: grid.endCol,	
 		x2: x2,
-		startRow: startRow,	
+		startRow: grid.startRow,	
 		y1: y1,
-		endRow: endRow,	
+		endRow: grid.endRow,	
 		y2: y2,
 		width: x2 - x1,
 		height: y2 - y1
 	}
 	
 	return grid;
-}
-
-sg.startDragSnapElement = function(event, ui){
-	sg.clearLastGrid();
-	sg.canvas.show(200);
-}
-
-sg.stopDragSnapElement = function(event, ui){
-	sg.clearLastGrid();
-	sg.placeElement($(event.target));
-	sg.canvas.hide(200);
 }
 
 sg.addCanvas = function(rows, cols){
@@ -336,6 +398,10 @@ sg.drawLine = function(ctx, x1, y1, x2, y2){
 	ctx.lineTo(x2, y2);
 	ctx.stroke();
 }
+
+/*
+ * Logging
+ */
 
 sg.setLogging = function(status){
 	if(typeof(status) == 'boolean'){
