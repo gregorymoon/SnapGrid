@@ -1,2 +1,4 @@
 /js/bower
 .project
+/npm_modules
+/out
