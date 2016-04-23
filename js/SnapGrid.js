@@ -5,7 +5,6 @@
 var sg = sg || {logging: false};
 
 $(document).ready(function(){
-	//sg.showLoadingIndicator();
 	sg.setLogging(true);
 	sg.addCanvas(20, 20);
 	
@@ -22,7 +21,6 @@ $(document).ready(function(){
 			start: sg.startDragSnapElement,
 			stop: sg.stopDragSnapElement
 		});
-	
 		
 	
 	$(window).on('resize', sg.updateGrid);

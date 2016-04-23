@@ -31,3 +31,9 @@ canvas.snap{
 	z-index: 1;
 	background-color: lightgray;
 }
+
+.snap-class-test{
+	position: absolute;
+	left: 100px;
+	top: 100px;
+}
