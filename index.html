@@ -6,16 +6,15 @@
 <link rel='stylesheet' href='css/testing.css'>
 <script src='bower/jquery/dist/jquery.min.js'></script>
 <script src='bower/jquery-ui/jquery-ui.min.js'></script>
-<script src='js/SnapGridClass.js'></script>
+<script src='src/SnapGrid.js'></script>
+<script src='src/Logger.js'></script>
+<script src='src/GridManager.js'></script>
 <script src='js/testing.js'></script>
 </head>
 <body>
-<div class='snap-element' snapWidth='500' snapHeight='500' id='test'></div> 
-<div class='snap-element' snapWidth='1' snapHeight='2' >Element 1</div> 
-<div class='snap-element' snapWidth='2' snapHeight='3' >Element 2</div> 
-<div class='snap-element' snapWidth='4' snapHeight='1' >Element 3</div> 
-<div class='snap-element' snapWidth='5' snapHeight='1' >Element 4</div> 
-<div class='snap-element' snapWidth='1' snapHeight='5' >Element 5</div> 
-<div id='snap-class-test'></div>
+<div class='snap-grid' id='grid1'>
+	<div class='snap-element' id='g1e1'>
+	</div>
+</div>
 </body>
 </html>

@@ -1,19 +1,21 @@
 /** @constructor */
 SnapGrid = function() {
-	var _selectors = [];
+	function test(){
+		console.log('test');
+	}
+
+	var _containers = [];
 	var _grids = {};
 
 	this.grids = function(){
 		return _grids;
 	}
 
-	this.selectors = function(){
-		return _selectors;
+	this.containers = function(){
+		return _containers;
 	}
 
 	this.resizeAll = function(){
-		console.log(_grids);
-
 		$(Object.keys(_grids)).each(function(idx, key){
 			_grids[key].resize();
 		});
@@ -29,12 +31,61 @@ SnapGrid = function() {
 	}
 
 	/**
-	 * Grid Constructor
+	 * SElement Constructor
+	 * 
+	 * @constructor
+	 */
+	SElement = function($_element, _grid){
+		this.resize = function(event, ui){
+			
+		}
+		
+		this.startResize = function(event, ui){
+			_grid.show(SnapGrid.INTERVAL);
+		}
+		
+		this.stopResize = function(event, ui){
+			_grid.hide(SnapGrid.INTERVAL);
+		}
+
+		this.resize = function(event, ui){
+			
+		}
+		
+		this.startDrag = function(event, ui){
+			_grid.show(SnapGrid.INTERVAL);
+		}
+		
+		this.stopDrag = function(event, ui){
+			_grid.hide(SnapGrid.INTERVAL);
+		}
+
+		$_element
+			.resizable({
+				containment: 'parent',
+				start: this.startResize,
+				stop: this.stopResize,
+				resize: this.resize,
+			})
+			.draggable({
+				containment: 'parent',
+				start: this.startDrag,
+				stop: this.stopDrag,
+				resize: this.resize,
+			});
+	}
+	
+	/**
+	 * SGrid Constructor
 	 * 
 	 * @param {string} selector - The selector for the element to become a Grid.
 	 * @constructor
 	 */
-	this.Grid = function(selector, rows, cols){
+	this.SGrid = function($_container, rows, cols){
+		this.getSElements = function(){
+			return _sElements;
+		}
+
 		this.getContainer = function(){
 			return $_container;
 		}
@@ -61,24 +112,39 @@ SnapGrid = function() {
 			_canvas.draw();
 		}
 
-		if(typeof(selector) != 'string'){
-			SnapGrid.Logger.logError(new TypeError("SnapGrid.Grid: 'selector' param must be a string."));
-		}
-		else if($.inArray(selector, _selectors) > -1){
-			SnapGrid.Logger.logError("SnapGrid.Grid: '" + selector + "' is already a Grid.");
-		}
-		else if($(selector).length == 0){
-			SnapGrid.Logger.logError("SnapGrid.Grid: DOM element '" + selector + "' does not exist.");
+		this.show = function(interval){
+			_canvas.show(interval);
 		}
 
-		var $_container = $(selector).addClass('snap-grid');
+		this.hide = function(interval){
+			_canvas.hide(interval);
+		}
+
+		if(typeof($_container) != 'object'){
+			SnapGrid.Logger.logError(new TypeError("SnapGrid.Grid: '$_container' param must be a jQuery object."));
+		}
+		else if($.inArray($_container, _containers) > -1){
+			SnapGrid.Logger.logError("SnapGrid.Grid: '" + $_container + "' is already a Grid.");
+		}
+		else if($_container.length == 0){
+			SnapGrid.Logger.logError("SnapGrid.Grid: DOM element '" + $_container + "' does not exist.");
+		}
+
 		var _canvas = new Canvas($_container);
-
+		var _sElements = [];
+		
 		this.updateCanvasSize($_container.height(), $_container.width());
 		this.setGridSize(rows, cols);
+		
+		var snapElements = $_container.find('.snap-element');
+		
+		for(var i = 0; i < snapElements.length; i++){
+			_sElements.push(new SElement($(snapElements[i]), this));
+		}
 
-		_selectors.push(selector);
-		_grids[selector] = this;
+		_containers.push($_container);
+		_grids[$_container] = this;
+		_canvas.hide();
 	}
 
 	/**
@@ -180,6 +246,9 @@ SnapGrid = function() {
 	}
 }
 
+SnapGrid.INTERVAL = 200;
+SnapGrid.EXISTS = false;
+
 /**
  * Error
  * 
@@ -221,15 +290,14 @@ SnapGrid.Logger = {
 
 var sg = sg || new SnapGrid();
 
-
-//DELETE!!
-
 $(document).ready(function(){
-	var grid = new sg.Grid('body', 10, 10);
-	var grid1 = new sg.Grid('#snap-class-test', 2, 10);
-	$('#snap-class-test').resizable();
-
 	$(window).on('resize', sg.resizeAll);
+	
+	$('.snap-grid').each(function(idx, grid){
+		var $grid = $(grid);
+
+		new sg.SGrid($grid, parseInt($grid.attr('snap-rows')) || 10 , parseInt($grid.attr('snap-cols')) || 10);
+	});
 });
 
 ;

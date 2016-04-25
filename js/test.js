@@ -1,0 +1,3 @@
+SnapGrid = function(){
+	
+}
